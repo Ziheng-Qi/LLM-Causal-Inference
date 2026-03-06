@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.env
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+results/
+*.csv
+*.json
+!causal_graphs/*.json
