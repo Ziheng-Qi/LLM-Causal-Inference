@@ -26,4 +26,5 @@ python run_experiment.py --graph smoking_cancer    # specific graph only
 5. Query LLM with both correct and perturbed graphs
 6. Compare: if the graph changes but the LLM's answer doesn't, it's likely memorizing rather than reasoning
 
+
 See [PLAN.md](PLAN.md) for detailed experiment design.
