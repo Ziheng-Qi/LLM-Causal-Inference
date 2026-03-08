@@ -6,7 +6,7 @@ add real clinical DAGs here.
 """
 
 import numpy as np
-from pgmpy.models import BayesianNetwork
+from pgmpy.models import DiscreteBayesianNetwork as BayesianNetwork
 from pgmpy.factors.discrete import TabularCPD
 
 
@@ -186,6 +186,8 @@ def build_mimic_graph() -> BayesianNetwork:
 # Registry: all available graphs
 # ---------------------------------------------------------------------------
 
+from src.mimic_dag import get_mimic_config
+
 GRAPH_REGISTRY = {
     "smoking_cancer": {
         "builder": build_smoking_cancer_graph,
@@ -215,4 +217,5 @@ GRAPH_REGISTRY = {
             "mediator": "LabResult",
         },
     },
+    "mimic_icu": get_mimic_config(),
 }

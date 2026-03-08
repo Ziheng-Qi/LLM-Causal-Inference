@@ -12,7 +12,7 @@ These serve as the "golden version" to compare against LLM answers.
 
 from typing import Dict, List, Optional, Tuple
 import numpy as np
-from pgmpy.models import BayesianNetwork
+from pgmpy.models import DiscreteBayesianNetwork as BayesianNetwork
 from pgmpy.inference import VariableElimination
 from pgmpy.inference import CausalInference
 

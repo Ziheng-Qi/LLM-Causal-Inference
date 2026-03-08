@@ -17,7 +17,7 @@ import random
 from typing import List, Optional, Tuple
 
 import numpy as np
-from pgmpy.models import BayesianNetwork
+from pgmpy.models import DiscreteBayesianNetwork as BayesianNetwork
 from pgmpy.factors.discrete import TabularCPD
 
 

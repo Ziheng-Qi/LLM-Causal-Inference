@@ -1,12 +1,8 @@
 """
-LLM client wrapper.
-
-Placeholder for LLM API calls. Supports OpenAI and Anthropic APIs.
-Fill in your API key in .env to activate.
+LLM client wrapper supporting OpenAI, Anthropic, and Gemini.
 """
 
 import os
-import json
 import time
 from typing import Optional
 
@@ -16,9 +12,7 @@ load_dotenv()
 
 
 class LLMClient:
-    """
-    Unified LLM client. Configure via .env file or constructor args.
-    """
+    SUPPORTED_PROVIDERS = ["openai", "anthropic", "gemini", "placeholder"]
 
     def __init__(
         self,
@@ -27,7 +21,7 @@ class LLMClient:
         api_key: Optional[str] = None,
     ):
         self.provider = provider or self._detect_provider()
-        self.model = model or os.getenv("LLM_MODEL", self._default_model())
+        self.model = model or self._default_model()
         self.api_key = api_key or self._get_api_key()
         self._client = None
 
@@ -36,34 +30,38 @@ class LLMClient:
             return "openai"
         if os.getenv("ANTHROPIC_API_KEY"):
             return "anthropic"
+        if os.getenv("GEMINI_API_KEY"):
+            return "gemini"
         return "placeholder"
 
     def _default_model(self) -> str:
-        defaults = {
-            "openai": "gpt-4o",
-            "anthropic": "claude-sonnet-4-20250514",
+        return {
+            "openai":      "gpt-4o",
+            "anthropic":   "claude-opus-4-6",
+            "gemini":      "gemini-2.0-flash",
             "placeholder": "placeholder",
-        }
-        return defaults.get(self.provider, "placeholder")
+        }.get(self.provider, "placeholder")
 
     def _get_api_key(self) -> Optional[str]:
-        keys = {
-            "openai": "OPENAI_API_KEY",
-            "anthropic": "ANTHROPIC_API_KEY",
-        }
-        env_var = keys.get(self.provider)
-        return os.getenv(env_var) if env_var else None
+        return {
+            "openai":    os.getenv("OPENAI_API_KEY"),
+            "anthropic": os.getenv("ANTHROPIC_API_KEY"),
+            "gemini":    os.getenv("GEMINI_API_KEY"),
+        }.get(self.provider)
 
     def _init_client(self):
         if self._client is not None:
             return
-
         if self.provider == "openai":
             from openai import OpenAI
             self._client = OpenAI(api_key=self.api_key)
         elif self.provider == "anthropic":
             import anthropic
             self._client = anthropic.Anthropic(api_key=self.api_key)
+        elif self.provider == "gemini":
+            import google.generativeai as genai
+            genai.configure(api_key=self.api_key)
+            self._client = genai.GenerativeModel(self.model)
         else:
             self._client = "placeholder"
 
@@ -74,15 +72,6 @@ class LLMClient:
         temperature: float = 0.0,
         max_tokens: int = 4096,
     ) -> dict:
-        """
-        Send a query to the LLM and return the response.
-
-        Returns dict with:
-          - response: the LLM's text response
-          - model: model used
-          - provider: provider used
-          - latency_s: response time in seconds
-        """
         self._init_client()
         start = time.time()
 
@@ -108,20 +97,24 @@ class LLMClient:
             )
             response_text = message.content[0].text
 
-        else:
-            # Placeholder: return a mock response for testing the pipeline
-            response_text = (
-                "[PLACEHOLDER RESPONSE]\n"
-                "This is a mock response. Configure your LLM API key in .env "
-                "to get real responses.\n\n"
-                f"Received prompt of length {len(prompt)} characters."
+        elif self.provider == "gemini":
+            # Gemini combines system + user prompt
+            full_prompt = f"{system_prompt}\n\n{prompt}"
+            response = self._client.generate_content(
+                full_prompt,
+                generation_config={"temperature": temperature, "max_output_tokens": max_tokens},
             )
+            response_text = response.text
 
-        latency = time.time() - start
+        else:
+            response_text = (
+                "[PLACEHOLDER] Configure an API key in .env to get real responses.\n"
+                f"Prompt length: {len(prompt)} chars."
+            )
 
         return {
             "response": response_text,
             "model": self.model,
             "provider": self.provider,
-            "latency_s": round(latency, 2),
+            "latency_s": round(time.time() - start, 2),
         }
